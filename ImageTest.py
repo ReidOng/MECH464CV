@@ -5,9 +5,9 @@ import requests
 from io import BytesIO
 from PIL import Image
 
-''' FOR CAMERA CAPTURES
+''' FOR WEBCAM CAPTURES
 # Connect to capture device
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(1) # NOTE: Change this number to test
 # Get a frame from the capture device
 # NOTE: ret will be false if the capture is unsuccessful
 #       use cap.release()
@@ -24,8 +24,9 @@ plt.show()
 cap.release()
 '''
 
+''' FOR READING TEST IMAGES FROM FILES'''
 # # Load the image
-image = cv2.imread('C:\\Users\\reido\\MECH 464\\Captureofmarker_42.png')
+image = cv2.imread('C:\\Users\\reido\\MECH 464\\Captureofmarker_42.png') # NOTE: Change this to your test image path
 # # plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 # # plt.show()
 
