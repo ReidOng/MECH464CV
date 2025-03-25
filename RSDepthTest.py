@@ -14,8 +14,9 @@ config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 pipeline.start(config)
 
 # Define ArUco dictionary and detector
-aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_50)
 aruco_params = cv2.aruco.DetectorParameters()
+aruco_detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
 
 try:
     while True:
@@ -35,14 +36,16 @@ try:
         gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
 
         # Detect ArUco markers
-        corners, ids, _ = cv2.aruco.ArucoDetector(gray, aruco_dict, parameters=aruco_params)
+        corners, ids, _ = aruco_detector.detectMarkers(gray)
+        # print(ids)
+        # print(corners)
 
         if ids is not None:
-            for i in range(len(ids)):
-                marker_corners = corners[i]  # Get four corner points
-                
+            for i in range(len(ids)): # loop through all detected markers
+                marker_corners = corners[i]  # Get four corner points of the current ID
+                # print(marker_corners)
                 # Extract one corner (e.g., top-left corner)
-                x, y = int(marker_corners[0][0]), int(marker_corners[0][1])
+                x, y = int(marker_corners[0][0][0]), int(marker_corners[0][0][1])
                 
                 # Get depth at that pixel (convert from mm to meters)
                 depth = depth_frame.get_distance(x, y)
@@ -55,7 +58,7 @@ try:
                 print(f"Marker {ids[i]} - Corner (x={x}, y={y}) -> Depth: {depth:.2f}m")
 
         # Show images
-        cv2.imshow("Depth Frame", depth_image)
+        # cv2.imshow("Depth Frame", depth_image)
         cv2.imshow("Color Frame", color_image)
 
         # Break loop with 'q'
