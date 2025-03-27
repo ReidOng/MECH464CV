@@ -14,8 +14,8 @@ import numpy as np # Import Numpy library
 # Python version: 3.8
 # Reference: https://www.pyimagesearch.com/2020/12/14/generating-aruco-markers-with-opencv-and-python/
  
-marker_id = 17
-output_filename = "aruco_id1.png"
+marker_id = 1
+output_filename = "aruco_id_1.png"
   
 def main():
   """
