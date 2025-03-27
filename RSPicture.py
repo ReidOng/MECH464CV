@@ -8,7 +8,8 @@ Use this script to take photos of the checkerboard for the realsense calibration
 """
 
 # Set the folder where images will be saved
-SAVE_FOLDER = "C:/Users/reido/MECH 464/Calibration"  # Change this path
+SAVE_FOLDER = "C:/Users/monaw/mech464/calibration_photos"  # Change this path
+
 
 # Ensure the save directory exists
 os.makedirs(SAVE_FOLDER, exist_ok=True)
