@@ -20,3 +20,4 @@ print(f"Distortion Coefficients: {depth_intrinsics.coeffs}")
 
 # Stop pipeline
 pipeline.stop()
+
