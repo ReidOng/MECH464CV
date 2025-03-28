@@ -2,6 +2,8 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 
+M2IN = 39.37 # meters to inches
+
 # Initialize RealSense pipeline
 pipeline = rs.pipeline()
 config = rs.config()
@@ -48,11 +50,11 @@ while True:
     # Detect ArUco markers
     corners, ids, _ = aruco_detector.detectMarkers(gray)
 
-
     if ids is not None:
         for i in range(len(ids)):
             # Extract marker corner points
             marker_corners = corners[i].reshape(4, 2)
+            print(f"Marker Corners: {marker_corners}")
 
             # Define 3D object points of the marker in local coordinates
             obj_points = np.array([
@@ -71,10 +73,28 @@ while True:
                 cv2.drawFrameAxes(color_image, camera_matrix, dist_coeffs, rvec, tvec, marker_size / 2)
 
                 # Get marker position in meters
-                print(f"Marker ID {ids[i][0]} Pose:\nRotation:\n{rvec}\nTranslation:\n{tvec}")
+                # print(f"Marker ID {ids[i][0]} Pose:\nRotation:\n{rvec}\nTranslation:\n{tvec}")
 
-    # Show the video feed
-    cv2.imshow("RealSense ArUco Detection", color_image)
+                # Calculate depth at the center of the marker
+                # image_points, _ = cv2.projectPoints(tvec, rvec, tvec, camera_matrix, dist_coeffs)
+                # float_center_x, float_center_y = image_points[0][0]  # x, y coordinates of the center
+                # center_x, center_y = int(float_center_x), int(float_center_y)
+                # print(f"Float Center Coordinates: {float_center_x, float_center_y}")
+                # print(f"Center Coordinates: {center_x, center_y}")
+
+                # Get depth value
+                center_x = int(np.mean(marker_corners[:, 0]))  # X-coordinate of the marker center
+                center_y = int(np.mean(marker_corners[:, 1]))  # Y-coordinate of the marker center
+                depth_m = depth_frame.get_distance(center_x, center_y)
+                depth_in = depth_m * M2IN
+
+                # Display depth on the image
+                cv2.putText(color_image, f"Depth: {depth_in:.2f} in", 
+                            (center_x, center_y), cv2.FONT_HERSHEY_SIMPLEX, 
+                            0.5, (0, 255, 0), 2)
+
+    # Show the video feed with detected ArUco markers and pose
+    cv2.imshow("RealSense ArUco Detection with Depth", color_image)
 
     # Exit when 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
