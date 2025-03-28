@@ -124,6 +124,7 @@ if(__name__== "__main__"):
 
                     # Compute the rotation vector
                     rvec = compute_rvec_from_points(origin, x_point, y_point)
+                    tvec = origin + np.array([0.015, 0, 0])
 
                     # Draw the Coordinate frame on the marker
                     cv2.drawFrameAxes(color_image, cameraMatrix=camera_matrix, distCoeffs=dist_coeffs, rvec=rvec, tvec=origin, length=0.025) 
@@ -138,6 +139,7 @@ if(__name__== "__main__"):
             # Show images
             # cv2.imshow("Depth Frame", depth_image)
             cv2.imshow("Color Frame", color_image)
+            cv2.imshow("Depth Frame", cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET))
 
             # Break loop with 'q'
             if cv2.waitKey(1) & 0xFF == ord('q'):
