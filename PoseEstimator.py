@@ -24,7 +24,7 @@ camera_matrix = np.array([[intrinsics.fx, 0, intrinsics.ppx],
 dist_coeffs = np.zeros((5,))  # Assume no distortion for RealSense
 
 # Define ArUco marker properties
-marker_size = 0.055  # Marker size in meters (adjust to your actual marker size)
+marker_size = 0.054  # Marker size in meters (adjust to your actual marker size)
 
 # Define ArUco dictionary and detector
 aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_50)
@@ -49,12 +49,12 @@ while True:
 
     # Detect ArUco markers
     corners, ids, _ = aruco_detector.detectMarkers(gray)
+    print(f"Detected IDs: {ids}")
 
     if ids is not None:
         for i in range(len(ids)):
             # Extract marker corner points
             marker_corners = corners[i].reshape(4, 2)
-            print(f"Marker Corners: {marker_corners}")
 
             # Define 3D object points of the marker in local coordinates
             obj_points = np.array([
@@ -67,31 +67,39 @@ while True:
             # SolvePnP to get rotation and translation vectors
             success, rvec, tvec = cv2.solvePnP(obj_points, marker_corners, camera_matrix, dist_coeffs)
 
-            if success:
-                # Draw marker and axis
-                cv2.aruco.drawDetectedMarkers(color_image, [corners[i]], ids[i])
-                cv2.drawFrameAxes(color_image, camera_matrix, dist_coeffs, rvec, tvec, marker_size / 2)
+            if ids[i]==2:
+                 center_box_3D = np.array([
+                 [0, 0, 0.075],  # Center of the marker in local coordinates
+            ])
+            else:
+                print(ids[i][0])
+                center_box_3D = np.array([
+                    [0, 0, -0.075],  # Center of the marker in local coordinates
+                ])
 
-                # Get marker position in meters
-                # print(f"Marker ID {ids[i][0]} Pose:\nRotation:\n{rvec}\nTranslation:\n{tvec}")
+            center_box_2D, _ = cv2.projectPoints(center_box_3D, rvec, tvec, camera_matrix, dist_coeffs)
+            for point in center_box_2D:
+                box_center_x, box_center_y = int(point[0][0]), int(point[0][1])
+                cv2.circle(color_image, (box_center_x, box_center_y), 5, (0, 255, 0), -1)  # Draw green circles at the corners
 
-                # Calculate depth at the center of the marker
-                # image_points, _ = cv2.projectPoints(tvec, rvec, tvec, camera_matrix, dist_coeffs)
-                # float_center_x, float_center_y = image_points[0][0]  # x, y coordinates of the center
-                # center_x, center_y = int(float_center_x), int(float_center_y)
-                # print(f"Float Center Coordinates: {float_center_x, float_center_y}")
-                # print(f"Center Coordinates: {center_x, center_y}")
 
-                # Get depth value
-                center_x = int(np.mean(marker_corners[:, 0]))  # X-coordinate of the marker center
-                center_y = int(np.mean(marker_corners[:, 1]))  # Y-coordinate of the marker center
-                depth_m = depth_frame.get_distance(center_x, center_y)
-                depth_in = depth_m * M2IN
+            # if success:
 
-                # Display depth on the image
-                cv2.putText(color_image, f"Depth: {depth_in:.2f} in", 
-                            (center_x, center_y), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.5, (0, 255, 0), 2)
+            # Draw marker and axis
+            cv2.aruco.drawDetectedMarkers(color_image, [corners[i]], ids[i])
+            cv2.drawFrameAxes(color_image, camera_matrix, dist_coeffs, rvec, tvec, marker_size / 2)
+
+            # Get depth value
+            center_x = int(np.mean(marker_corners[:, 0]))  # X-coordinate of the marker center
+            center_y = int(np.mean(marker_corners[:, 1]))  # Y-coordinate of the marker center
+            depth_m = depth_frame.get_distance(center_x, center_y)
+
+            # Display depth on the image
+            if (depth_m == 0 or depth_m > 1):
+                    continue
+            cv2.putText(color_image, f"Depth: {depth_m*M2IN:.2f} in", 
+                        (center_x, center_y), cv2.FONT_HERSHEY_SIMPLEX, 
+                        0.5, (0, 255, 0), 2)
 
     # Show the video feed with detected ArUco markers and pose
     cv2.imshow("RealSense ArUco Detection with Depth", color_image)

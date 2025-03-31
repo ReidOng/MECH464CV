@@ -131,7 +131,7 @@ if(__name__== "__main__"):
 
                     # Draw marker and depth text
                     cv2.aruco.drawDetectedMarkers(color_image, corners, ids)
-                    cv2.putText(color_image, f"Depth: {depth*M2IN:.2f}in", (x, y - 10),
+                    cv2.putText(color_image, f"Depth: {depth*M2IN:.2f}in", (x, y),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                     
                     print(f"Marker {ids[i]} - Corner (x={x}, y={y}) -> Depth: {depth*M2IN:.2f}\" at [{X*M2IN:.2f} {Y*M2IN:.2f} {Z*M2IN:.2f}]")
