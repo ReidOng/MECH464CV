@@ -2,6 +2,27 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 
+"""
+ID: Desired Rotation
+37: -90 around x axis
+3: -90 around x axis, then -90 around z
+1: 180 around y axis, then -90 around x
+17: 90 around y, then -90 around x
+"""
+
+# Helper rotation vectors (in radians)
+rxN90 = np.array([-np.pi/2, 0, 0])     # -90° around X
+ry180 = np.array([0, np.pi, 0])        # 180° around Y
+ry90  = np.array([0, np.pi/2, 0])      # 90° around Y
+rzN90 = np.array([0, 0, -np.pi/2])    # -90° around Z
+
+id_rotation_adjustments = {
+    37: cv2.Rodrigues(rxN90)[0],
+    3: cv2.Rodrigues(rxN90)[0] @ cv2.Rodrigues(rzN90)[0],
+    1: cv2.Rodrigues(ry180)[0] @ cv2.Rodrigues(rxN90)[0],
+    17: cv2.Rodrigues(ry90)[0] @ cv2.Rodrigues(rxN90)[0],
+}
+
 M2IN = 39.37 # meters to inches
 
 # Initialize RealSense pipeline
@@ -22,6 +43,10 @@ camera_matrix = np.array([[intrinsics.fx, 0, intrinsics.ppx],
                           [0, intrinsics.fy, intrinsics.ppy],  
                           [0, 0, 1]], dtype=np.float32)
 dist_coeffs = np.zeros((5,))  # Assume no distortion for RealSense
+
+# camera_matrix =  [[604.44916   0.      330.29477]
+#  [  0.      603.9991  245.70053]
+#  [  0.        0.        1.     ]]
 
 # Define ArUco marker properties
 marker_size = 0.054  # Marker size in meters (adjust to your actual marker size)
@@ -51,6 +76,7 @@ while True:
     corners, ids, _ = aruco_detector.detectMarkers(gray)
     print(f"Detected IDs: {ids}")
 
+
     if ids is not None:
         for i in range(len(ids)):
             # Extract marker corner points
@@ -67,21 +93,32 @@ while True:
             # SolvePnP to get rotation and translation vectors
             success, rvec, tvec = cv2.solvePnP(obj_points, marker_corners, camera_matrix, dist_coeffs)
 
-            if ids[i]==2:
-                 center_box_3D = np.array([
-                 [0, 0, 0.075],  # Center of the marker in local coordinates
-            ])
+            # Convert detected rvec to a rotation matrix
+            Rotation_marker, _ = cv2.Rodrigues(rvec)
+
+            # Get the predefined adjustment for this marker ID
+            Rotation_adjusted = id_rotation_adjustments.get(ids[i][0], np.eye(3))  # Default to identity if not in dict
+
+            # Compute the new rvec: combine detected rotation with the desired adjustment
+            Rotation_final = Rotation_marker @ Rotation_adjusted  # Apply the predefined correction
+            rvec_final, _ = cv2.Rodrigues(Rotation_final)  # Convert back to rotation vector
+
+            # Define the center offset (translation in local marker frame)
+            if ids[i][0] == 2:
+                center_box_offset = np.array([[0, 0, 0.075]], dtype=np.float32)  # Move up in marker's Z
             else:
-                print(ids[i][0])
-                center_box_3D = np.array([
-                    [0, 0, -0.075],  # Center of the marker in local coordinates
-                ])
+                center_box_offset = np.array([[0, 0, -0.075]], dtype=np.float32)  # Move down in marker's Z
 
-            center_box_2D, _ = cv2.projectPoints(center_box_3D, rvec, tvec, camera_matrix, dist_coeffs)
-            for point in center_box_2D:
-                box_center_x, box_center_y = int(point[0][0]), int(point[0][1])
-                cv2.circle(color_image, (box_center_x, box_center_y), 5, (0, 255, 0), -1)  # Draw green circles at the corners
+            # Transform the center offset into the camera frame
+            center_box_tvec = tvec + Rotation_marker @ center_box_offset.T  # Apply translation in marker's frame
 
+            # Draw the coordinate system at the center of the box
+            cv2.drawFrameAxes(color_image, camera_matrix, dist_coeffs, rvec_final, center_box_tvec, marker_size / 2)
+
+            # Draws Location of Center Box
+            center_box_2D, _ = cv2.projectPoints(center_box_offset[0], rvec, tvec, camera_matrix, dist_coeffs)
+            box_center_x, box_center_y = int(center_box_2D[0][0][0]), int(center_box_2D[0][0][1])
+            cv2.circle(color_image, (box_center_x, box_center_y), 5, (0, 255, 0), -1)  # Draw green circles at the corners
 
             # if success:
 
