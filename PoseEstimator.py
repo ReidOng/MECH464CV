@@ -105,9 +105,9 @@ while True:
 
             # Define the center offset (translation in local marker frame)
             if ids[i][0] == 2:
-                center_box_offset = np.array([[0, 0, 0.075]], dtype=np.float32)  # Move up in marker's Z
+                center_box_offset = np.array([[0, 0, 0.04127]], dtype=np.float32)  # Move up in marker's Z
             else:
-                center_box_offset = np.array([[0, 0, -0.075]], dtype=np.float32)  # Move down in marker's Z
+                center_box_offset = np.array([[0, 0, -0.04127]], dtype=np.float32)  # Move down in marker's Z
 
             # Transform the center offset into the camera frame
             center_box_tvec = tvec + Rotation_marker @ center_box_offset.T  # Apply translation in marker's frame
